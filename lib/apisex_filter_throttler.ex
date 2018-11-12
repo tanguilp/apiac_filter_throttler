@@ -17,8 +17,8 @@ defmodule APISexFilterThrottler do
   function, taking in parameter the connection and returning either the key, or the
   tuple `{key, scale, limit}`.
   Note that the `APISexFilterThrottler.Functions` provides with out-of-the-box functions
-  - `scale`: the time window of the token bucket algorithm. No default value.
-  - `limit`: the maximum limit of the token bucket algorithm. No default value.
+  - `scale`: the time window of the token bucket algorithm, in milliseconds. No default value.
+  - `limit`: the maximum limit of the token bucket algorithm, in milliseconds. No default value.
   - `increment`: the increment of the token bucket algorithm (defaults to `1`)
   - `backend`: Exhammer's backend, default to `nil`
   - `set_filter_error_response`: if `true`, sets the HTTP status code to `429`.
@@ -84,12 +84,12 @@ defmodule APISexFilterThrottler do
         {:ok, conn}
 
       {:deny, _limit} ->
-        {:ok, {_count, count_remaining, _ms_to_next_bucket, _created_at}} =
+        {:ok, {_count, _count_remaining, ms_to_next_bucket, _created_at, _updated_at}} =
           Hammer.inspect_bucket(key, scale, limit)
 
         {:error, conn, %APISex.Filter.Forbidden{filter: __MODULE__,
                                                 reason: :rate_limited,
-                                                error_data: count_remaining}}
+                                                error_data: ms_to_next_bucket}}
 
       {:error, reason} ->
         {:error, conn, %APISex.Filter.Forbidden{filter: __MODULE__, reason: reason}}
@@ -119,9 +119,10 @@ defmodule APISexFilterThrottler do
   end
 
   @impl APISex.Filter
-  def set_error_response(conn, %APISex.Filter.Forbidden{error_data: count_remaining}, _opts) do
+  def set_error_response(conn, %APISex.Filter.Forbidden{error_data: ms_to_next_bucket}, _opts) do
+    retry_after = Integer.to_string(trunc(ms_to_next_bucket / 1000) + 1)
     conn
-    |> Plug.Conn.put_resp_header("retry-after", trunc(count_remaining / 1000) + 1)
+    |> Plug.Conn.put_resp_header("retry-after", retry_after)
     |> Plug.Conn.resp(:too_many_requests, "")
   end
 end
