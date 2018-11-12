@@ -1,4 +1,12 @@
 defmodule APISexFilterThrottler.Functions do
+  @moduledoc """
+  Throttling functions that construct keys for the `APISexFilterThrottler` plug.
+
+  Note that except `throttle_by_ip_subject_client_safe/1`, these functions do
+  not protect against collisions. See the *Security considerations* of the
+  `APISexFilterThrottler` module for further information.
+  """
+
   @doc """
   Returns the IP address as a string
 
