@@ -20,10 +20,10 @@ Note that the `APISexFilterThrottler.Functions` provides with out-of-the-box fun
 - `backend`: Exhammer's backend, defaults to `nil`
 - `exec_cond`: a `(Plug.Conn.t() -> boolean())` function that determines whether
 this filter is to be executed or not. Defaults to `fn _ -> true end`
-- `set_error_response`: function called when request is throttled. Defaults to
-`APISexFilterThrottler.set_error_response/3`
-- `error_response_verbosity`: a `(Plug.Conn.t -> :debug, :normal, :minimal)` function.
-Defaults to `APISex.default_error_response_verbosity/1`
+- `send_error_response`: function called when request is throttled. Defaults to
+`APISexFilterThrottler.send_error_response/3`
+- `error_response_verbosity`: one of `:debug`, `:normal` or `:minimal`.
+Defaults to `:normal`
 
 ## Example
 
@@ -39,7 +39,7 @@ Allow 5000 requests / minute per client, only for machine-to-machine access:
 
 ```elixir
 Plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_client/1,
-  exec_cond: fn conn -> APISex.machine_to_machine?(conn) end,
+  exec_cond: &APISex.machine_to_machine?/1,
   scale: 60_000,
   limit: 5000
 ```

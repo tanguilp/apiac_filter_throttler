@@ -23,10 +23,10 @@ defmodule APISexFilterThrottler do
   - `backend`: Exhammer's backend, defaults to `nil`
   - `exec_cond`: a `(Plug.Conn.t() -> boolean())` function that determines whether
   this filter is to be executed or not. Defaults to `fn _ -> true end`
-  - `set_error_response`: function called when request is throttled. Defaults to
-  `APISexFilterThrottler.set_error_response/3`
-  - `error_response_verbosity`: a `(Plug.Conn.t -> :debug, :normal, :minimal)` function.
-  Defaults to `APISex.default_error_response_verbosity/1`
+  - `send_error_response`: function called when request is throttled. Defaults to
+  `APISexFilterThrottler.send_error_response/3`
+  - `error_response_verbosity`: one of `:debug`, `:normal` or `:minimal`.
+  Defaults to `:normal`
 
   ## Example
 
@@ -42,7 +42,7 @@ defmodule APISexFilterThrottler do
 
   ```elixir
   Plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_client/1,
-    exec_cond: fn conn -> APISex.machine_to_machine?(conn) end,
+    exec_cond: &APISex.machine_to_machine?/1,
     scale: 60_000,
     limit: 5000
   ```
@@ -77,8 +77,8 @@ defmodule APISexFilterThrottler do
     |> Map.put_new(:increment, 1)
     |> Map.put_new(:backend, nil)
     |> Map.put_new(:exec_cond, fn _ -> true end)
-    |> Map.put_new(:set_error_response, &APISexFilterThrottler.set_error_response/3)
-    |> Map.put_new(:error_response_verbosity, &APISex.default_error_response_verbosity/1)
+    |> Map.put_new(:send_error_response, &__MODULE__.send_error_response/3)
+    |> Map.put_new(:error_response_verbosity, :normal)
   end
 
   @impl Plug
@@ -89,7 +89,7 @@ defmodule APISexFilterThrottler do
           conn
 
         {:error, conn, reason} ->
-          opts[:set_error_response].(conn, reason, opts)
+          opts[:send_error_response].(conn, reason, opts)
       end
     else
       conn
@@ -148,13 +148,49 @@ defmodule APISexFilterThrottler do
     Hammer.check_rate_inc(backend, key, scale, limit, increment)
   end
 
+  @doc """
+  Implementation of the `APISex.Filter` behaviour.
+
+  ## Verbosity
+
+  The following elements in the HTTP response are set depending on the value
+  of the `:error_response_verbosity` option:
+
+  | Error reponse verbosity | HTTP status             | Headers     | Body                                          |
+  |:-----------------------:|-------------------------|-------------|-----------------------------------------------|
+  | :debug                  | Too many requests (429) | retry-after | `APISex.Filter.Forbidden` exception's message |
+  | :normal                 | Too many requests (429) | retry-after |                                               |
+  | :minimal                | Forbidden (403)         |             |                                               |
+
+  """
   @impl APISex.Filter
-  def set_error_response(conn, %APISex.Filter.Forbidden{error_data: ms_to_next_bucket}, _opts) do
+  def send_error_response(conn, %APISex.Filter.Forbidden{error_data: ms_to_next_bucket} = error, opts) do
+    # not rounding here because rounding could result in having in an invalid retry_after
+    # by less than a second, but that could still confuse automated scripts
     retry_after = Integer.to_string(trunc(ms_to_next_bucket / 1000) + 1)
 
+    verbosity = opts[:error_response_verbosity]
+
+    send_error_response(conn, error, retry_after, verbosity)
+  end
+
+  defp send_error_response(conn, error, retry_after, :debug) do
     conn
     |> Plug.Conn.put_resp_header("retry-after", retry_after)
-    |> Plug.Conn.resp(:too_many_requests, "")
+    |> Plug.Conn.send_resp(:too_many_requests, Exception.message(error))
+    |> Plug.Conn.halt()
+  end
+
+  defp send_error_response(conn, _error, retry_after, :normal) do
+    conn
+    |> Plug.Conn.put_resp_header("retry-after", retry_after)
+    |> Plug.Conn.send_resp(:too_many_requests, "")
+    |> Plug.Conn.halt()
+  end
+
+  defp send_error_response(conn, _error, _retry_after, :minimal) do
+    conn
+    |> Plug.Conn.send_resp(:forbidden, "")
     |> Plug.Conn.halt()
   end
 end

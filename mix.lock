@@ -1,5 +1,5 @@
 %{
-  "apisex": {:git, "https://github.com/tanguilp/apisex.git", "09702ab082828839304c7867d6f954ce701a8c9d", [tag: "master"]},
+  "apisex": {:git, "https://github.com/tanguilp/apisex.git", "0a6bbc08fa787eb011a11a8dbda4e88ecee6aa0a", [tag: "master"]},
   "dialyxir": {:hex, :dialyxir, "1.0.0-rc.4", "71b42f5ee1b7628f3e3a6565f4617dfb02d127a0499ab3e72750455e986df001", [:mix], [{:erlex, "~> 0.1", [hex: :erlex, repo: "hexpm", optional: false]}], "hexpm"},
   "earmark": {:hex, :earmark, "1.2.6", "b6da42b3831458d3ecc57314dff3051b080b9b2be88c2e5aa41cd642a5b044ed", [:mix], [], "hexpm"},
   "erlex": {:hex, :erlex, "0.1.6", "c01c889363168d3fdd23f4211647d8a34c0f9a21ec726762312e08e083f3d47e", [:mix], [], "hexpm"},
