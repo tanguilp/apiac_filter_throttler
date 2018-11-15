@@ -4,11 +4,12 @@ defmodule APISexFilterThrottlerTest do
   doctest APISexFilterThrottler
 
   test "No throttling (by ip)" do
-    opts = APISexFilterThrottler.init(
-      key: &APISexFilterThrottler.Functions.throttle_by_ip/1,
-      scale: 10_000,
-      limit: 5
-    )
+    opts =
+      APISexFilterThrottler.init(
+        key: &APISexFilterThrottler.Functions.throttle_by_ip/1,
+        scale: 10_000,
+        limit: 5
+      )
 
     conn =
       conn(:get, "/")
@@ -24,11 +25,12 @@ defmodule APISexFilterThrottlerTest do
   end
 
   test "Throttling (by ip)" do
-    opts = APISexFilterThrottler.init(
-      key: &APISexFilterThrottler.Functions.throttle_by_ip/1,
-      scale: 10_000,
-      limit: 5
-    )
+    opts =
+      APISexFilterThrottler.init(
+        key: &APISexFilterThrottler.Functions.throttle_by_ip/1,
+        scale: 10_000,
+        limit: 5
+      )
 
     conn =
       conn(:get, "/")

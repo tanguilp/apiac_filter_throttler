@@ -63,9 +63,9 @@ defmodule APISexFilterThrottler do
 
   @impl Plug
   def init(opts) do
-    if opts[:key] == nil, do: raise "`key` is a mandatory parameter"
-    if opts[:scale] == nil, do: raise "`scale` is a mandatory parameter"
-    if opts[:limit] == nil, do: raise "`limit` is a mandatory parameter"
+    if opts[:key] == nil, do: raise("`key` is a mandatory parameter")
+    if opts[:scale] == nil, do: raise("`scale` is a mandatory parameter")
+    if opts[:limit] == nil, do: raise("`limit` is a mandatory parameter")
 
     opts
     |> Enum.into(%{})
@@ -104,9 +104,12 @@ defmodule APISexFilterThrottler do
         {:ok, {_count, _count_remaining, ms_to_next_bucket, _created_at, _updated_at}} =
           Hammer.inspect_bucket(key, scale, limit)
 
-        {:error, conn, %APISex.Filter.Forbidden{filter: __MODULE__,
-                                                reason: :rate_limited,
-                                                error_data: ms_to_next_bucket}}
+        {:error, conn,
+         %APISex.Filter.Forbidden{
+           filter: __MODULE__,
+           reason: :rate_limited,
+           error_data: ms_to_next_bucket
+         }}
 
       {:error, reason} ->
         {:error, conn, %APISex.Filter.Forbidden{filter: __MODULE__, reason: reason}}
@@ -114,15 +117,14 @@ defmodule APISexFilterThrottler do
   end
 
   defp get_filter_fun(fun) when is_function(fun, 1), do: fun
-  defp get_filter_fun(params) when is_list(params)
-  do
-    function_name = "throttle_" <>
-      (
-        params
-        |> Enum.sort()
-        |> Enum.map(&Atom.to_string/1)
-        |> Enum.join("_")
-      )
+
+  defp get_filter_fun(params) when is_list(params) do
+    function_name =
+      "throttle_" <>
+        (params
+         |> Enum.sort()
+         |> Enum.map(&Atom.to_string/1)
+         |> Enum.join("_"))
 
     Module.concat(APISexFilterThrottler.Functions, function_name)
   end

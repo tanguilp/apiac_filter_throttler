@@ -18,7 +18,7 @@ defmodule APISexFilterThrottler.Functions do
   "121.42.56.166"
   ```
   """
-  @spec throttle_by_ip(Plug.Conn.t) :: String.t
+  @spec throttle_by_ip(Plug.Conn.t()) :: String.t()
   def throttle_by_ip(conn) do
     List.to_string(:inet.ntoa(conn.remote_ip))
   end
@@ -34,7 +34,7 @@ defmodule APISexFilterThrottler.Functions do
   "121.42.56.166/api/prices/eurusd"
   ```
   """
-  @spec throttle_by_ip_path(Plug.Conn.t) :: String.t
+  @spec throttle_by_ip_path(Plug.Conn.t()) :: String.t()
   def throttle_by_ip_path(conn) do
     List.to_string(:inet.ntoa(conn.remote_ip)) <> conn.request_path
   end
@@ -52,7 +52,7 @@ defmodule APISexFilterThrottler.Functions do
   "client32187"
   ```
   """
-  @spec throttle_by_client(Plug.Conn.t) :: String.t
+  @spec throttle_by_client(Plug.Conn.t()) :: String.t()
   def throttle_by_client(conn) do
     case APISex.client(conn) do
       client when is_binary(client) ->
@@ -76,7 +76,7 @@ defmodule APISexFilterThrottler.Functions do
   "client32187/api/prices/eurusd"
   ```
   """
-  @spec throttle_by_client_path(Plug.Conn.t) :: String.t
+  @spec throttle_by_client_path(Plug.Conn.t()) :: String.t()
   def throttle_by_client_path(conn) do
     case APISex.client(conn) do
       client when is_binary(client) ->
@@ -101,7 +101,7 @@ defmodule APISexFilterThrottler.Functions do
   "121.42.56.166client10341"
   ```
   """
-  @spec throttle_by_ip_client(Plug.Conn.t) :: String.t
+  @spec throttle_by_ip_client(Plug.Conn.t()) :: String.t()
   def throttle_by_ip_client(conn) do
     List.to_string(:inet.ntoa(conn.remote_ip)) <> APISex.client(conn)
   end
@@ -118,7 +118,7 @@ defmodule APISexFilterThrottler.Functions do
   "bob23mymobileapp"
   ```
   """
-  @spec throttle_by_subject_client(Plug.Conn.t) :: String.t
+  @spec throttle_by_subject_client(Plug.Conn.t()) :: String.t()
   def throttle_by_subject_client(conn) do
     APISex.subject(conn) <> APISex.client(conn)
   end
@@ -135,7 +135,7 @@ defmodule APISexFilterThrottler.Functions do
   "275.33.99.208bob23mymobileapp"
   ```
   """
-  @spec throttle_by_ip_subject_client(Plug.Conn.t) :: String.t
+  @spec throttle_by_ip_subject_client(Plug.Conn.t()) :: String.t()
   def throttle_by_ip_subject_client(conn) do
     List.to_string(:inet.ntoa(conn.remote_ip)) <> APISex.subject(conn) <> APISex.client(conn)
   end
@@ -149,11 +149,10 @@ defmodule APISexFilterThrottler.Functions do
   "37541545"
   ```
   """
-  @spec throttle_by_subject_client_safe(Plug.Conn.t) :: String.t
+  @spec throttle_by_subject_client_safe(Plug.Conn.t()) :: String.t()
   def throttle_by_subject_client_safe(conn) do
     {conn.remote_ip, APISex.subject(conn), APISex.client(conn)}
     |> :erlang.phash2()
     |> Integer.to_string()
   end
-
 end
