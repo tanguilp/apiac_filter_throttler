@@ -25,6 +25,8 @@ defmodule APISexFilterThrottler do
   this filter is to be executed or not. Defaults to `fn _ -> true end`
   - `set_error_response`: function called when request is throttled. Defaults to
   `APISexFilterThrottler.set_error_response/3`
+  - `error_response_verbosity`: a `(Plug.Conn.t -> :debug, :normal, :minimal)` function.
+  Defaults to `APISex.default_error_response_verbosity/1`
 
   ## Example
 
@@ -76,6 +78,7 @@ defmodule APISexFilterThrottler do
     |> Map.put_new(:backend, nil)
     |> Map.put_new(:exec_cond, fn _ -> true end)
     |> Map.put_new(:set_error_response, &APISexFilterThrottler.set_error_response/3)
+    |> Map.put_new(:error_response_verbosity, &APISex.default_error_response_verbosity/1)
   end
 
   @impl Plug
