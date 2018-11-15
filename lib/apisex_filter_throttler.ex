@@ -21,11 +21,8 @@ defmodule APISexFilterThrottler do
   - `limit`: the maximum limit of the token bucket algorithm, in milliseconds. No default value.
   - `increment`: the increment of the token bucket algorithm (defaults to `1`)
   - `backend`: Exhammer's backend, defaults to `nil`
-  - `set_filter_error_response`: if `true`, sets the HTTP status code to `429`.
-  If false, does not do anything. Defaults to `true`
-  - `halt_on_filter_failure`: if set to `true`, halts the connection and directly sends the
-  response. When set to `false`, does nothing and therefore allows dealing with the error
-  later in the code. Defaults to `true`
+  - `set_error_response`: function called when request is throttled. Defaults to
+  `APISexFilterThrottler.set_error_response/3`
 
   ## Example
 
@@ -74,8 +71,7 @@ defmodule APISexFilterThrottler do
     |> Enum.into(%{})
     |> Map.put_new(:increment, 1)
     |> Map.put_new(:backend, nil)
-    |> Map.put_new(:set_filter_error_response, true)
-    |> Map.put_new(:halt_on_filter_failure, true)
+    |> Map.put_new(:set_error_response, &APISexFilterThrottler.set_error_response/3)
   end
 
   @impl Plug
@@ -85,20 +81,7 @@ defmodule APISexFilterThrottler do
         conn
 
       {:error, conn, reason} ->
-        conn =
-          if opts[:set_filter_error_response] do
-            set_error_response(conn, reason, opts)
-          else
-            conn
-          end
-
-        if opts[:halt_on_filter_failure] do
-          conn
-          |> Plug.Conn.send_resp()
-          |> Plug.Conn.halt()
-        else
-          conn
-        end
+        opts[:set_error_response].(conn, reason, opts)
     end
   end
 
@@ -155,8 +138,10 @@ defmodule APISexFilterThrottler do
   @impl APISex.Filter
   def set_error_response(conn, %APISex.Filter.Forbidden{error_data: ms_to_next_bucket}, _opts) do
     retry_after = Integer.to_string(trunc(ms_to_next_bucket / 1000) + 1)
+
     conn
     |> Plug.Conn.put_resp_header("retry-after", retry_after)
     |> Plug.Conn.resp(:too_many_requests, "")
+    |> Plug.Conn.halt()
   end
 end
