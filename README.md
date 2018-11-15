@@ -18,11 +18,10 @@ Note that the `APISexFilterThrottler.Functions` provides with out-of-the-box fun
 - `limit`: the maximum limit of the token bucket algorithm, in milliseconds. No default value.
 - `increment`: the increment of the token bucket algorithm (defaults to `1`)
 - `backend`: Exhammer's backend, defaults to `nil`
-- `set_filter_error_response`: if `true`, sets the HTTP status code to `429`.
-If false, does not do anything. Defaults to `true`
-- `halt_on_filter_failure`: if set to `true`, halts the connection and directly sends the
-response. When set to `false`, does nothing and therefore allows dealing with the error
-later in the code. Defaults to `true`
+- `exec_cond`: a `(Plug.Conn.t() -> boolean())` function that determines whether
+this filter is to be executed or not. Defaults to `fn _ -> true end`
+- `set_error_response`: function called when request is throttled. Defaults to
+`APISexFilterThrottler.set_error_response/3`
 
 ## Example
 
@@ -34,10 +33,11 @@ Plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_su
   limit: 50
 ```
 
-Allow 5000 requests / minute per client
+Allow 5000 requests / minute per client, only for machine-to-machine access:
 
 ```elixir
 Plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_client/1,
+  exec_cond: fn conn -> APISex.machine_to_machine?(conn) end,
   scale: 60_000,
   limit: 5000
 ```

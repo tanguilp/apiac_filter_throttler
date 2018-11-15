@@ -21,6 +21,8 @@ defmodule APISexFilterThrottler do
   - `limit`: the maximum limit of the token bucket algorithm, in milliseconds. No default value.
   - `increment`: the increment of the token bucket algorithm (defaults to `1`)
   - `backend`: Exhammer's backend, defaults to `nil`
+  - `exec_cond`: a `(Plug.Conn.t() -> boolean())` function that determines whether
+  this filter is to be executed or not. Defaults to `fn _ -> true end`
   - `set_error_response`: function called when request is throttled. Defaults to
   `APISexFilterThrottler.set_error_response/3`
 
@@ -34,10 +36,11 @@ defmodule APISexFilterThrottler do
     limit: 50
   ```
 
-  Allow 5000 requests / minute per client
+  Allow 5000 requests / minute per client, only for machine-to-machine access:
 
   ```elixir
   Plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_client/1,
+    exec_cond: fn conn -> APISex.machine_to_machine?(conn) end,
     scale: 60_000,
     limit: 5000
   ```
@@ -71,17 +74,22 @@ defmodule APISexFilterThrottler do
     |> Enum.into(%{})
     |> Map.put_new(:increment, 1)
     |> Map.put_new(:backend, nil)
+    |> Map.put_new(:exec_cond, fn _ -> true end)
     |> Map.put_new(:set_error_response, &APISexFilterThrottler.set_error_response/3)
   end
 
   @impl Plug
   def call(conn, opts) do
-    case filter(conn, opts) do
-      {:ok, conn} ->
-        conn
+    if opts[:exec_cond].(conn) do
+      case filter(conn, opts) do
+        {:ok, conn} ->
+          conn
 
-      {:error, conn, reason} ->
-        opts[:set_error_response].(conn, reason, opts)
+        {:error, conn, reason} ->
+          opts[:set_error_response].(conn, reason, opts)
+      end
+    else
+      conn
     end
   end
 
