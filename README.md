@@ -30,7 +30,7 @@ Defaults to `:normal`
 Allow 50 request / 10 seconds per subject and per client:
 
 ```elixir
-Plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_subject_client/1,
+plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_subject_client/1,
   scale: 10_000,
   limit: 50
 ```
@@ -38,7 +38,7 @@ Plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_su
 Allow 5000 requests / minute per client, only for machine-to-machine access:
 
 ```elixir
-Plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_client/1,
+plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_client/1,
   exec_cond: &APISex.machine_to_machine?/1,
   scale: 60_000,
   limit: 5000
