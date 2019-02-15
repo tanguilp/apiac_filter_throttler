@@ -24,7 +24,7 @@ defmodule APISexFilterThrottler.MixProject do
   defp deps do
     [
       {:plug, "~> 1.0"},
-      {:apisex, github: "tanguilp/apisex", tag: "master"},
+      {:apisex, github: "tanguilp/apisex", tag: "0.1.0"},
       {:hammer, "~> 6.0"},
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false}
