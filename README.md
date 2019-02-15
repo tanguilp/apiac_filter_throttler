@@ -15,7 +15,7 @@ function, taking in parameter the connection and returning either the key, or th
 tuple `{key, scale, limit}`. No default value.
 Note that the `APISexFilterThrottler.Functions` provides with out-of-the-box functions
 - `scale`: the time window of the token bucket algorithm, in milliseconds. No default value.
-- `limit`: the maximum limit of the token bucket algorithm, in milliseconds. No default value.
+- `limit`: the maximum limit of the token bucket algorithm, in attempt count. No default value.
 - `increment`: the increment of the token bucket algorithm (defaults to `1`)
 - `backend`: Exhammer's backend, defaults to `nil`
 - `exec_cond`: a `(Plug.Conn.t() -> boolean())` function that determines whether
