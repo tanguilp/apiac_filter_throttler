@@ -1,9 +1,9 @@
-defmodule APISexFilterThrottler do
+defmodule APIacFilterThrottler do
   @behaviour Plug
-  @behaviour APISex.Filter
+  @behaviour APIac.Filter
 
   @moduledoc """
-  An `APISex.Filter` plug for API requests rate-limiting
+  An `APIac.Filter` plug for API requests rate-limiting
 
   This plug uses the [Exhammer](https://github.com/ExHammer/hammer) package as
   its backend. This library uses the token bucket algorithm, which means that
@@ -16,7 +16,7 @@ defmodule APISexFilterThrottler do
   `(Plug.Conn.t -> String.t | {String.t, non_neg_integer(), non_neg_integer()})`
   function, taking in parameter the connection and returning either the key, or the
   tuple `{key, scale, limit}`. No default value.
-  Note that the `APISexFilterThrottler.Functions` provides with out-of-the-box functions
+  Note that the `APIacFilterThrottler.Functions` provides with out-of-the-box functions
   - `scale`: the time window of the token bucket algorithm, in milliseconds. No default value.
   - `limit`: the maximum limit of the token bucket algorithm, in attempt count. No default value.
   - `increment`: the increment of the token bucket algorithm (defaults to `1`)
@@ -33,7 +33,7 @@ defmodule APISexFilterThrottler do
   Allow 50 request / 10 seconds per subject and per client:
 
   ```elixir
-  plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_subject_client/1,
+  plug APIacFilterThrottler, key: &APIacFilterThrottler.Functions.throttle_by_subject_client/1,
     scale: 10_000,
     limit: 50
   ```
@@ -41,8 +41,8 @@ defmodule APISexFilterThrottler do
   Allow 5000 requests / minute per client, only for machine-to-machine access:
 
   ```elixir
-  plug APISexFilterThrottler, key: &APISexFilterThrottler.Functions.throttle_by_client/1,
-    exec_cond: &APISex.machine_to_machine?/1,
+  plug APIacFilterThrottler, key: &APIacFilterThrottler.Functions.throttle_by_client/1,
+    exec_cond: &APIac.machine_to_machine?/1,
     scale: 60_000,
     limit: 5000
   ```
@@ -96,7 +96,7 @@ defmodule APISexFilterThrottler do
     end
   end
 
-  @impl APISex.Filter
+  @impl APIac.Filter
   def filter(conn, opts) do
     {key, scale, limit} =
       case get_filter_fun(opts[:key]).(conn) do
@@ -116,14 +116,14 @@ defmodule APISexFilterThrottler do
           Hammer.inspect_bucket(key, scale, limit)
 
         {:error, conn,
-         %APISex.Filter.Forbidden{
+         %APIac.Filter.Forbidden{
            filter: __MODULE__,
            reason: :rate_limited,
            error_data: ms_to_next_bucket
          }}
 
       {:error, reason} ->
-        {:error, conn, %APISex.Filter.Forbidden{filter: __MODULE__, reason: reason}}
+        {:error, conn, %APIac.Filter.Forbidden{filter: __MODULE__, reason: reason}}
     end
   end
 
@@ -137,7 +137,7 @@ defmodule APISexFilterThrottler do
          |> Enum.map(&Atom.to_string/1)
          |> Enum.join("_"))
 
-    Module.concat(APISexFilterThrottler.Functions, function_name)
+    Module.concat(APIacFilterThrottler.Functions, function_name)
   end
 
   defp throttle(nil, key, scale, limit, increment) do
@@ -149,7 +149,7 @@ defmodule APISexFilterThrottler do
   end
 
   @doc """
-  Implementation of the `APISex.Filter` behaviour.
+  Implementation of the `APIac.Filter` behaviour.
 
   ## Verbosity
 
@@ -158,13 +158,13 @@ defmodule APISexFilterThrottler do
 
   | Error reponse verbosity | HTTP status             | Headers     | Body                                          |
   |:-----------------------:|-------------------------|-------------|-----------------------------------------------|
-  | :debug                  | Too many requests (429) | retry-after | `APISex.Filter.Forbidden` exception's message |
+  | :debug                  | Too many requests (429) | retry-after | `APIac.Filter.Forbidden` exception's message |
   | :normal                 | Too many requests (429) | retry-after |                                               |
   | :minimal                | Forbidden (403)         |             |                                               |
 
   """
-  @impl APISex.Filter
-  def send_error_response(conn, %APISex.Filter.Forbidden{error_data: ms_to_next_bucket} = error, opts) do
+  @impl APIac.Filter
+  def send_error_response(conn, %APIac.Filter.Forbidden{error_data: ms_to_next_bucket} = error, opts) do
     # not rounding here because rounding could result in having in an invalid retry_after
     # by less than a second, but that could still confuse automated scripts
     retry_after = Integer.to_string(trunc(ms_to_next_bucket / 1000) + 1)

@@ -1,10 +1,10 @@
-defmodule APISexFilterThrottler.Functions do
+defmodule APIacFilterThrottler.Functions do
   @moduledoc """
-  Throttling functions that construct keys for the `APISexFilterThrottler` plug.
+  Throttling functions that construct keys for the `APIacFilterThrottler` plug.
 
   Note that except `throttle_by_ip_subject_client_safe/1`, these functions do
   not protect against collisions. See the *Security considerations* of the
-  `APISexFilterThrottler` module for further information.
+  `APIacFilterThrottler` module for further information.
   """
 
   @doc """
@@ -42,7 +42,7 @@ defmodule APISexFilterThrottler.Functions do
   @doc """
   Returns the authenticated client as a string
 
-  Make sure that a client is authenticated by an `APISex.Authenticator` plug, otherwise
+  Make sure that a client is authenticated by an `APIac.Authenticator` plug, otherwise
   this function will raise an exception since you certainly don't want clients to be
   throttled, but not unauthenticated accesses
 
@@ -54,7 +54,7 @@ defmodule APISexFilterThrottler.Functions do
   """
   @spec throttle_by_client(Plug.Conn.t()) :: String.t()
   def throttle_by_client(conn) do
-    case APISex.client(conn) do
+    case APIac.client(conn) do
       client when is_binary(client) ->
         client
 
@@ -66,7 +66,7 @@ defmodule APISexFilterThrottler.Functions do
   @doc """
   Returns the authenticated client concatenated to the path as a string
 
-  Make sure that a client is authenticated by an `APISex.Authenticator` plug, otherwise
+  Make sure that a client is authenticated by an `APIac.Authenticator` plug, otherwise
   this function will raise an exception since you certainly don't want clients to be
   throttled, but not unauthenticated accesses
 
@@ -78,7 +78,7 @@ defmodule APISexFilterThrottler.Functions do
   """
   @spec throttle_by_client_path(Plug.Conn.t()) :: String.t()
   def throttle_by_client_path(conn) do
-    case APISex.client(conn) do
+    case APIac.client(conn) do
       client when is_binary(client) ->
         client <> conn.request_path
 
@@ -103,7 +103,7 @@ defmodule APISexFilterThrottler.Functions do
   """
   @spec throttle_by_ip_client(Plug.Conn.t()) :: String.t()
   def throttle_by_ip_client(conn) do
-    List.to_string(:inet.ntoa(conn.remote_ip)) <> APISex.client(conn)
+    List.to_string(:inet.ntoa(conn.remote_ip)) <> APIac.client(conn)
   end
 
   @doc """
@@ -120,7 +120,7 @@ defmodule APISexFilterThrottler.Functions do
   """
   @spec throttle_by_subject_client(Plug.Conn.t()) :: String.t()
   def throttle_by_subject_client(conn) do
-    APISex.subject(conn) <> APISex.client(conn)
+    APIac.subject(conn) <> APIac.client(conn)
   end
 
   @doc """
@@ -137,7 +137,7 @@ defmodule APISexFilterThrottler.Functions do
   """
   @spec throttle_by_ip_subject_client(Plug.Conn.t()) :: String.t()
   def throttle_by_ip_subject_client(conn) do
-    List.to_string(:inet.ntoa(conn.remote_ip)) <> APISex.subject(conn) <> APISex.client(conn)
+    List.to_string(:inet.ntoa(conn.remote_ip)) <> APIac.subject(conn) <> APIac.client(conn)
   end
 
   @doc """
@@ -151,7 +151,7 @@ defmodule APISexFilterThrottler.Functions do
   """
   @spec throttle_by_subject_client_safe(Plug.Conn.t()) :: String.t()
   def throttle_by_subject_client_safe(conn) do
-    {conn.remote_ip, APISex.subject(conn), APISex.client(conn)}
+    {conn.remote_ip, APIac.subject(conn), APIac.client(conn)}
     |> :erlang.phash2()
     |> Integer.to_string()
   end
