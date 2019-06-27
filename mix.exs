@@ -24,7 +24,7 @@ defmodule APIacFilterThrottler.MixProject do
   defp deps do
     [
       {:plug, "~> 1.0"},
-      {:apiac, github: "tanguilp/apiac", tag: "0.2.0"},
+      {:apiac, github: "tanguilp/apiac", tag: "0.3.0"},
       {:hammer, "~> 6.0"},
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false}
