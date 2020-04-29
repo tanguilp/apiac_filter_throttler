@@ -10,7 +10,7 @@ default, a local ETS backend is launched on startup.
 ```elixir
 def deps do
   [
-    {:apiac_filter_throttler, github: "tanguilp/apiac_filter_throttler", tag: "0.2.0"}
+    {:apiac_filter_throttler, "~> 1.0"}
   ]
 end
 ```
